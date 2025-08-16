@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import javax.swing.border.LineBorder;
 import javax.swing.border.EmptyBorder;
 import java.awt.event.*;
+import com.sun.speech.freetts.Voice;
+import com.sun.speech.freetts.VoiceManager;
 
 public class XandO {
     int playerOneWins = 0;
@@ -270,6 +272,9 @@ public class XandO {
             btn.setEnabled(false);
             flag = 1;
             checkWin();
+            if (!isGameOver()){
+                VoiceHelper.speak(playerTwoName + "'s turn");
+                }
 
             if (computerMode && !isGameOver()) {
                 if (computerMoveTimer != null && computerMoveTimer.isRunning()) {
@@ -281,6 +286,8 @@ public class XandO {
                 });
                 computerMoveTimer.setRepeats(false);
                 computerMoveTimer.start();
+
+
             }
         } else {
             playertwo.add(position);
@@ -289,6 +296,10 @@ public class XandO {
             btn.setEnabled(false);
             flag = 0;
             checkWin();
+
+            if (!isGameOver()) {
+                VoiceHelper.speak(playerOneName + "'s turn");
+            }
         }
 
         // DEBUG: log exit state
@@ -316,6 +327,7 @@ public class XandO {
                 overlay.repaint();
             }
             SwingUtilities.invokeLater(() -> {
+                VoiceHelper.speak(playerOneName + " wins!");
                 ThemeManager.showThemedMessage(windows, playerOneName + " Wins!", "Winner");
                 disableAllButtons();
                 askToPlayAgain();
@@ -328,8 +340,10 @@ public class XandO {
             if (overlay != null) {
                 overlay.setVisible(true);
                 overlay.repaint();
+
             }
             SwingUtilities.invokeLater(() -> {
+                VoiceHelper.speak(playerTwoName + " wins!");
                 ThemeManager.showThemedMessage(windows, playerTwoName + " Wins!", "Winner");
                 disableAllButtons();
                 askToPlayAgain();
@@ -339,6 +353,7 @@ public class XandO {
         if ((playerOne.size() + playertwo.size()) == 9) {
             draws++;
             SwingUtilities.invokeLater(() -> {
+                VoiceHelper.speak("It's a draw!");
                 ThemeManager.showThemedMessage(windows, "It's a Draw!", "Draw");
                 askToPlayAgain();
             });
@@ -554,5 +569,28 @@ public class XandO {
         mb.add(game);
         mb.add(view);
         return mb;
+    }
+
+    class VoiceHelper {
+        private static final String VOICE_NAME = "kevin16";
+
+        public static void speak(String text) {
+            new Thread(() -> {
+                System.setProperty("freetts.voices",
+                        "com.sun.speech.freetts.en.us.cmu_us_kal.KevinVoiceDirectory");
+
+                VoiceManager vm = VoiceManager.getInstance();
+                Voice voice = vm.getVoice(VOICE_NAME);
+
+                if (voice == null) {
+                    System.err.println("Voice not found: " + VOICE_NAME);
+                    return;
+                }
+
+                voice.allocate();
+                voice.speak(text);
+                voice.deallocate(); // ✅ clean up
+            }).start();
+        }
     }
 }
